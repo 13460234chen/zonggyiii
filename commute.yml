@@ -1,0 +1,47 @@
+name: Smart Commute Risk Notification
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 台灣時間 06:30；GitHub Actions 支援 timezone 欄位
+    - cron: "30 6 * * 1-5"
+      timezone: "Asia/Taipei"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smart-commute
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run commute risk notification
+        env:
+          LOCATION_NAME: ${{ vars.LOCATION_NAME }}
+          LOCATION_LAT: ${{ vars.LOCATION_LAT }}
+          LOCATION_LON: ${{ vars.LOCATION_LON }}
+          TIMEZONE: ${{ vars.TIMEZONE }}
+          HEAT_THRESHOLD: ${{ vars.HEAT_THRESHOLD }}
+          RAIN_THRESHOLD: ${{ vars.RAIN_THRESHOLD }}
+          AQI_THRESHOLD: ${{ vars.AQI_THRESHOLD }}
+          WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py
